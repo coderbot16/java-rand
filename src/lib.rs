@@ -3,26 +3,27 @@
 use std::num::Wrapping;
 
 /// Modulus
-pub const M: Wrapping<u64> = Wrapping((1 << 48) - 1);
+pub const M: Wrapping<i64> = Wrapping((1 << 48) - 1);
 
 /// Multiplier
-pub const A: Wrapping<u64> = Wrapping(0x5DEECE66D);
+pub const A: Wrapping<i64> = Wrapping(0x5DEECE66D);
 
 /// Increment
-pub const C: Wrapping<u64> = Wrapping(11);
+pub const C: Wrapping<i64> = Wrapping(11);
 
 const F32_DIV: f32 = (1u32 << 24) as f32;
 const F64_DIV: f64 = (1u64 << 53) as f64;
 
+#[derive(Debug, Clone)]
 pub struct Random {
-	state: Wrapping<u64>,
+	state: Wrapping<i64>,
 	next_gaussian: Option<f64>
 }
 
 impl Random {
 	pub fn new(seed: u64) -> Self {
 		Random {
-			state: Wrapping(seed ^ C.0) & M,
+			state: Wrapping((seed as i64) ^ C.0) & M,
 			next_gaussian: None
 		}
 	}
@@ -43,7 +44,7 @@ impl Random {
 
 		self.state = (self.state * A + C) & M;
 
-		self.state.0 >> (48 - bits)
+		(self.state.0 as u64) >> (48 - bits)
 	}
 
 	/// Fills the byte array with random bytes.
