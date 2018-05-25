@@ -23,12 +23,12 @@ pub struct Random {
 impl Random {
 	pub fn new(seed: u64) -> Self {
 		Random {
-			state: Wrapping((seed as i64) ^ C.0) & M,
+			state: Wrapping((seed as i64) ^ A.0) & M,
 			next_gaussian: None
 		}
 	}
 
-	/// Sets the seed to `seed`. This is equivalent to
+	/// Sets the seed to `seed`. This is equivalent to `Random::new`
 	pub fn set_seed(&mut self, seed: u64) {
 		*self = Random::new(seed);
 	}
@@ -36,7 +36,7 @@ impl Random {
 	/// Steps the RNG, returning up to 48 bits.
 	///
 	/// # Panics
-	/// If the requested bits is over 48, this function panics. Use next_i64/next_u64 instead, or multiple calls.
+	/// If the amount of requested bits is over 48, this function panics. Use next_i64/next_u64 instead, or multiple calls.
 	pub fn next(&mut self, bits: u8) -> u64 {
 		if bits > 48 {
 			panic!("Too many bits!")
@@ -59,10 +59,12 @@ impl Random {
 		}
 	}
 
+	/// Returns a uniformly distributed signed 32-bit integer.
 	pub fn next_i32(&mut self) -> i32 {
 		self.next(32) as i32
 	}
 
+	/// Returns a uniformly distributed unsigned 32-bit integer.
 	pub fn next_u32(&mut self) -> u32 {
 		self.next(32) as u32
 	}
@@ -81,7 +83,7 @@ impl Random {
 		if (max as u32).is_power_of_two() {
 			let max = max as u64;
 
-			return ((max.wrapping_mul(self.next(31) as u64)) >> 31) as i32;
+			return ((max.wrapping_mul(self.next(31))) >> 31) as i32;
 		}
 
 		let mut bits = self.next(31) as i32;
@@ -101,19 +103,22 @@ impl Random {
 	/// Maximums of 2^31 or greater are not supported in Java.
 	///
 	/// # Panics
-	/// If `max` is less than 1 (signed comparison), the function panics.
+	/// If `max` reinterpreted as a signed 32-bit integer is less than 1, the function panics.
 	pub fn next_u32_bound(&mut self, max: u32) -> u32 {
 		self.next_i32_bound(max as i32) as u32
 	}
 
+	/// Returns a uniformly distributed signed 64-bit integer.
 	pub fn next_i64(&mut self) -> i64 {
 		self.next_u64() as i64
 	}
 
+	/// Returns a uniformly distributed unsigned 64-bit integer.
 	pub fn next_u64(&mut self) -> u64 {
 		(self.next(32) << 32).wrapping_add(self.next(32))
 	}
 
+	/// Returns a boolean value that has an equal chance of being true or false.
 	pub fn next_bool(&mut self) -> bool {
 		self.next(1) == 1
 	}
@@ -170,3 +175,79 @@ impl Random {
 		}
 	}
 }
+
+/*const F32_DIV: f32 = (1u32 << 24) as f32;
+const F64_DIV: f64 = (1u64 << 53) as f64;
+
+/// Implementation of a random number generator matching the implementation in Java. Used very commonly in all versions of the Minecraft worldgen.
+#[derive(Debug, Clone)]
+pub struct Random {
+	pub seed: i64
+}
+
+impl Random {
+	/// Initializes the RNG with a seed. This is NOT the same as creating it raw, as the seed undergoes some transformation first.
+	pub fn new(seed: u64) -> Self {
+		let seed = seed as i64;
+		Random {seed: (seed ^ 0x5DEECE66D) & ((1 << 48) - 1)}
+	}
+
+	/// Steps the RNG by one, returning up to 48 bits.
+	fn next(&mut self, bits: u8) -> i32 {
+		if bits > 48 {
+			panic!("Too many bits!")
+		}
+
+		self.seed = (self.seed.wrapping_mul(0x5DEECE66D).wrapping_add(0xB)) & ((1 << 48) - 1);
+		(self.seed >> (48 - bits)) as i32
+	}
+
+	/// Returns an i32 in the range [0, max).
+	pub fn next_i32_bound(&mut self, max: i32) -> i32 {
+		if max <= 0 {
+			panic!("Maximum must be > 0")
+		}
+
+		if (max & -max) == max  {// i.e., n is a power of 2
+			let max = max as u64;
+
+			return ((max.wrapping_mul(self.next(31) as u64)) >> 31) as i32;
+		}
+
+		let mut bits = self.next(31) as i32;
+		let mut val = bits % max;
+
+		while bits - val + (max - 1) < 0 {
+			bits = self.next(31) as i32;
+			val = bits % max;
+		}
+
+		val
+	}
+
+	pub fn next_u32_bound(&mut self, max: u32) -> u32 {
+		self.next_i32_bound(max as i32) as u32
+	}
+
+	/// Returns an i64. There are only 2^48 possible results from this function, as JavaRng has a 48-bit state.
+	pub fn next_i64(&mut self) -> i64 {
+		((self.next(32) as i64) << 32).wrapping_add(self.next(32) as i64)
+	}
+
+	pub fn next_u64(&mut self) -> u64 {
+		self.next_i64() as u64
+	}
+
+	/// Returns a f32 uniformly distributed between 0.0 and 1.0.
+	pub fn next_f32(&mut self) -> f32 {
+		(self.next(24) as f32) / F32_DIV
+	}
+
+	/// Returns a f64 uniformly distributed between 0.0 and 1.0.
+	pub fn next_f64(&mut self) -> f64 {
+		let high = (self.next(26) as i64) << 27;
+		let low = self.next(27) as i64;
+
+		(high.wrapping_add(low) as f64) / F64_DIV
+	}
+}*/
