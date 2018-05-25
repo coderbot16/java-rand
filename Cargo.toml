@@ -2,5 +2,8 @@
 name = "java-rand"
 version = "0.1.0"
 authors = ["coderbot16 <coderbot16@gmail.com>"]
+description = "Implementation of java.util.Random"
+license = "MIT"
+repository = "https://github.com/coderbot16/java-rand/tree/master"
 
 [dependencies]
